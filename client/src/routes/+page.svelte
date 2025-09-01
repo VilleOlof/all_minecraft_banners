@@ -62,7 +62,9 @@
     {/each}
 </div>
 
-<div class="flex flex-col gap-4 justify-center items-center lg:text-2xl mt-4">
+<div
+    class="flex flex-col gap-4 justify-center items-center lg:text-2xl mt-4 w-full"
+>
     <div class="flex gap-0.5 md:gap-2 mt-4 items-center">
         <button
             disabled={navigation_disabled}
@@ -77,7 +79,7 @@
         >
             {"<"}
         </button>
-        <p class="lg:text-3xl items-center flex gap-0.5 lg:gap-2">
+        <div class="lg:text-3xl items-center flex gap-0.5 lg:gap-2">
             <input
                 onchange={(e) => {
                     if (!e.target) return;
@@ -94,7 +96,7 @@
                     params.page = new_page;
                 }}
                 type="text"
-                class="w-28 sm:w-min bg-neutral-950 px-2 outline-0 hover:bg-neutral-800 focus:bg-neutral-800 rounded-sm transition-colors py-1"
+                class="w-28 sm:max-w-[29rem] sm:w-fit bg-neutral-950 px-2 outline-0 hover:bg-neutral-800 focus:bg-neutral-800 rounded-sm transition-colors py-1"
                 value={format_num_string(params.page.toString())}
             />
             <button
@@ -114,7 +116,7 @@
             <span class="bg-neutral-950 px-2 py-1 rounded-sm hidden lg:block"
                 >{format_num_string(MAX_PAGE.toString())}</span
             >
-        </p>
+        </div>
         <button
             disabled={navigation_disabled}
             class="cursor-pointer disabled:opacity-50 bg-neutral-950 px-2.5 h-8 lg:h-11 lg:px-3.5 lg:py-1 rounded-sm hover:bg-neutral-800 transition-colors active:bg-neutral-900"
