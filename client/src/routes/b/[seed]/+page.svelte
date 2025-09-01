@@ -43,6 +43,17 @@
     }
 </script>
 
+<svelte:head>
+    <title>Banner #{data.seed}</title>
+
+    <meta property="og:title" content="All Minecraft Banners" />
+    <meta property="og:image" content="{PUBLIC_API}/banner/{data.seed}" />
+    <meta
+        property="og:description"
+        content="View the beautiful creation of banner #{data.seed}"
+    />
+</svelte:head>
+
 <div class="flex w-full h-full flex-col items-center justify-center gap-4">
     <div class="flex flex-col lg:flex-row gap-4 h-full lg:h-auto">
         <!-- i dont know why we need the 18 extra margin on top but otherwise half the banner is out of the viewport -->

@@ -3,8 +3,8 @@ export function random_bigint(max: bigint) {
         max = BigInt(max);
     }
 
-    const byteLength = (max.toString(2).length + 7) >> 3; // Round up to nearest byte
-    const maxValue = max + 1n; // inclusive upper bound
+    const byteLength = (max.toString(2).length + 7) >> 3;
+    const maxValue = max + 1n;
 
     const array = new Uint8Array(byteLength);
 

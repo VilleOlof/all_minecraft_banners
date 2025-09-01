@@ -23,6 +23,7 @@ use crate::{
     random_color,
 };
 
+// add a ton of cache headers
 pub async fn get_banner(
     seed: Option<Path<String>>,
     Query(query): Query<GetBannerQuery>,
@@ -56,7 +57,10 @@ pub async fn get_banner(
     img.write_to(&mut buf, ImageFormat::WebP).unwrap();
 
     let bytes = buf.into_inner().unwrap().into_inner();
-    let headers = [(header::CONTENT_TYPE, "image/webp")];
+    let headers = [
+        (header::CONTENT_TYPE, "image/webp"),
+        (header::CACHE_CONTROL, "public, max-age=3600"),
+    ];
 
     Ok((headers, bytes))
 }
@@ -180,7 +184,10 @@ pub async fn create_banner(
     banner.write_to(&mut buf, ImageFormat::WebP).unwrap();
 
     let bytes = buf.into_inner().unwrap().into_inner();
-    let headers = [(header::CONTENT_TYPE, "image/webp")];
+    let headers = [
+        (header::CONTENT_TYPE, "image/webp"),
+        (header::CACHE_CONTROL, "public, max-age=3600"),
+    ];
 
     Ok((headers, bytes))
 }

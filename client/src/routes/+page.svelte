@@ -31,7 +31,7 @@
         navigation_disabled = true;
         setTimeout(() => {
             navigation_disabled = false;
-        }, 200);
+        }, 150);
     }
 
     onMount(() => (params.page = params.page));
@@ -52,9 +52,9 @@
             disabled={navigation_disabled}
             class="cursor-pointer disabled:opacity-50 bg-neutral-950 px-2.5 h-8 lg:h-11 lg:px-3.5 lg:py-1 rounded-sm hover:bg-neutral-800 transition-colors active:bg-neutral-900"
             onclick={() => {
-                params.page -= BigInt(1);
+                params.page -= 1n;
                 if (params.page < 0) {
-                    params.page = BigInt(0);
+                    params.page = 0n;
                 }
                 nav();
             }}
@@ -70,7 +70,7 @@
                     value = value.trim();
                     let new_page = BigInt(value);
                     if (new_page < 0) {
-                        new_page = BigInt(0);
+                        new_page = 0n;
                     }
                     if (new_page > MAX_PAGE) {
                         new_page = MAX_PAGE;
@@ -103,10 +103,10 @@
             disabled={navigation_disabled}
             class="cursor-pointer disabled:opacity-50 bg-neutral-950 px-2.5 h-8 lg:h-11 lg:px-3.5 lg:py-1 rounded-sm hover:bg-neutral-800 transition-colors active:bg-neutral-900"
             onclick={() => {
-                if (params.page + BigInt(1) > MAX_PAGE) {
+                if (params.page + 1n > MAX_PAGE) {
                     params.page = MAX_PAGE;
                 } else {
-                    params.page += BigInt(1);
+                    params.page += 1n;
                 }
                 nav();
             }}

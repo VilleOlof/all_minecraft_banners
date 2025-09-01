@@ -14,7 +14,7 @@
 		navigation_disabled = true;
 		setTimeout(() => {
 			navigation_disabled = false;
-		}, 200);
+		}, 150);
 	}
 </script>
 
