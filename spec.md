@@ -9,3 +9,4 @@ domain: **allminecraftbanners.com** (via cloudflare)
 
 eventually tidy up backend & stuff & just make it open source  
 move mcb into its own crate in this workspace (just banner & pattern adding, including base static bytes)  
+also some stats on the server would be amazing (like how many banners generated & stuff)

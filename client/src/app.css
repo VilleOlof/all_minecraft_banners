@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+@font-face {
+    font-family: "Monocraft";
+    src: url("/Monocraft.ttf");
+}
+
+@utility pixelated {
+    image-rendering: pixelated;
+}
+
+@theme {
+    --font-monocraft: "Monocraft", sans-serif
+}

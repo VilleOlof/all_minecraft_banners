@@ -31,13 +31,16 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let patterns = load_patterns("patterns")?;
+    let mut patterns = load_patterns("patterns")?;
+    // make sure theyre consistently in the same order
+    patterns.sort_by(|a, b| a.0.cmp(&b.0));
     let base = Banner::load_base()?;
 
     let state = AppState { patterns, base };
 
     let app = Router::new()
         .route("/", get(root))
+        .route("/create", get(create_banner))
         .route("/banner", get(get_banner))
         .route("/banner/{seed}", get(get_banner))
         .route("/pattern", get(get_pattern_list))
@@ -262,6 +265,66 @@ async fn get_metadata(State(state): State<Arc<AppState>>) -> impl IntoResponse {
         "colors": colors,
         "combinations": get_possible_combinations(state.patterns.len()).to_string()
     }))
+}
+
+async fn create_banner(
+    Query(query): Query<GetBannerQuery>,
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    let base_color = match query.base_color {
+        Some(color) => match Color::from_repr(color) {
+            Some(c) => c,
+            None => return Err((StatusCode::BAD_REQUEST, "Invalid 'base_color'".to_string())),
+        },
+        None => return Err((StatusCode::BAD_REQUEST, "Missing 'base_color'".to_string())),
+    };
+    let layers = map_layers(query.layers);
+
+    let mut banner = match Banner::new(state.base.clone(), base_color) {
+        Ok(b) => b,
+        Err(_) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to create banner".to_string(),
+            ));
+        }
+    };
+
+    for layer in layers {
+        let layer = match layer {
+            Some(l) => l,
+            None => continue,
+        };
+
+        let (pattern_id, color) = match layer {
+            (Some(i), Some(c)) => (i, c),
+            _ => {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "Invalid layer arguments".to_string(),
+                ));
+            }
+        };
+        let pattern = state.patterns[pattern_id].1.clone();
+        let pattern = Pattern::new(pattern);
+        match banner.add_pattern(pattern, &color) {
+            Ok(_) => (),
+            Err(_) => {
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to add layer".to_string(),
+                ));
+            }
+        };
+    }
+
+    let mut buf = BufWriter::new(Cursor::new(vec![]));
+    banner.write_to(&mut buf, ImageFormat::WebP).unwrap();
+
+    let bytes = buf.into_inner().unwrap().into_inner();
+    let headers = [(header::CONTENT_TYPE, "image/webp")];
+
+    Ok((headers, bytes))
 }
 
 fn load_patterns(dir: impl AsRef<std::path::Path>) -> Result<Vec<(String, Image)>> {
