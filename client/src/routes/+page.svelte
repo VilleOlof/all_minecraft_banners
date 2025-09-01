@@ -5,6 +5,7 @@
     import { queryParameters } from "sveltekit-search-params";
     import dice from "$lib/assets/dice.webp";
     import { onMount } from "svelte";
+    import { PUBLIC_API } from "$env/static/public";
 
     const { data }: LayoutProps = $props();
     const max = BigInt(data.metadata.combinations);
@@ -36,6 +37,21 @@
 
     onMount(() => (params.page = params.page));
 </script>
+
+<svelte:head>
+    <title>AllMinecraftBanners.com</title>
+
+    <meta property="og:title" content="All Minecraft Banners" />
+    <meta
+        property="og:image"
+        content="{PUBLIC_API}/banner/{data.header_seed}"
+    />
+    <meta
+        property="og:description"
+        content="View all {data.metadata
+            .combinations} different banners from Minecraft."
+    />
+</svelte:head>
 
 <div class="flex gap-6 flex-wrap content-start justify-center">
     {#each { length: Number(PER_PAGE) }, i}

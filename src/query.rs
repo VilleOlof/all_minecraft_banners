@@ -13,6 +13,7 @@ pub struct GetBannerQuery {
     #[serde(default)]
     pub layers: Vec<Option<String>>,
     pub max_layers: Option<usize>,
+    pub width: Option<u32>,
 }
 
 // custom layer/pattern query format

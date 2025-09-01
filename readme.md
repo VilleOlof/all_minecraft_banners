@@ -52,6 +52,10 @@ base: *0.0.0.0:8213*
 - `max_layers`  
     Specify how many layers will be used to generate the banner.  
 
+Only endpoints which returns an image directly can use:  
+- `width`  
+    Specify the width in pixels, height will automatically become `width * 2`.  
+
 ### patterns
 for the backend to even work at all, it needs a source of patterns it can draw from & use.  
 these should be placed in `/patterns/*.png` (from project root).  

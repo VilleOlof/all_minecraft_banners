@@ -20,18 +20,6 @@
 
 <svelte:head>
 	<link rel="icon" href={dice} />
-	<title>AllMinecraftBanners.com</title>
-
-	<meta property="og:title" content="All Minecraft Banners" />
-	<meta
-		property="og:image"
-		content="{PUBLIC_API}/banner/{data.header_seed}"
-	/>
-	<meta
-		property="og:description"
-		content="View all {data.metadata
-			.combinations} different banners from Minecraft."
-	/>
 </svelte:head>
 
 <main

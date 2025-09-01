@@ -5,7 +5,7 @@ use axum::{
     response::IntoResponse,
 };
 use axum_extra::extract::Query;
-use image::ImageFormat;
+use image::{ImageFormat, imageops::FilterType};
 use mcb::*;
 use serde_json::json;
 use std::{
@@ -44,7 +44,7 @@ pub async fn get_banner(
                 return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("{e:#?}")));
             }
         };
-    let img = banner_from_pattern_list(
+    let mut img = banner_from_pattern_list(
         &mut rng,
         &mut state.base.clone(),
         base_color,
@@ -54,6 +54,10 @@ pub async fn get_banner(
     .unwrap();
 
     increment_banner_count(&state.banner_count).await;
+
+    if let Some(width) = query.width {
+        img = image::imageops::resize(&img, width, width * 2, FilterType::Nearest);
+    }
 
     let mut buf = BufWriter::new(Cursor::new(vec![]));
     img.write_to(&mut buf, ImageFormat::WebP).unwrap();
@@ -184,8 +188,13 @@ pub async fn create_banner(
 
     increment_banner_count(&state.banner_count).await;
 
+    let mut img = banner.img_owned();
+    if let Some(width) = query.width {
+        img = image::imageops::resize(&img, width, width * 2, FilterType::Nearest);
+    }
+
     let mut buf = BufWriter::new(Cursor::new(vec![]));
-    banner.write_to(&mut buf, ImageFormat::WebP).unwrap();
+    img.write_to(&mut buf, ImageFormat::WebP).unwrap();
 
     let bytes = buf.into_inner().unwrap().into_inner();
     let headers = [

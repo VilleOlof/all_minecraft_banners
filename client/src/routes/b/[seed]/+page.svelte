@@ -47,7 +47,10 @@
     <title>Banner #{data.seed}</title>
 
     <meta property="og:title" content="All Minecraft Banners" />
-    <meta property="og:image" content="{PUBLIC_API}/banner/{data.seed}" />
+    <meta
+        property="og:image"
+        content="{PUBLIC_API}/banner/{data.seed}?width=128"
+    />
     <meta
         property="og:description"
         content="View the beautiful creation of banner #{data.seed}"
