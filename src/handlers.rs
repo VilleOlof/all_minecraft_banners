@@ -45,7 +45,7 @@ pub async fn get_banner(
         };
     let img = banner_from_pattern_list(
         &mut rng,
-        state.base.clone(),
+        &mut state.base.clone(),
         base_color,
         pattern_list,
         &state.patterns,
@@ -138,7 +138,7 @@ pub async fn create_banner(
     };
     let layers = map_layers(query.layers);
 
-    let mut banner = match Banner::new(state.base.clone(), base_color) {
+    let mut banner = match Banner::new(&mut state.base.clone(), base_color) {
         Ok(b) => b,
         Err(_) => {
             return Err((

@@ -1,3 +1,4 @@
 /target
-/patterns
+/patterns/*
+!/patterns/.gitkeep
 banner.png

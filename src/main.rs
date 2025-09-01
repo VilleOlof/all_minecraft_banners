@@ -12,6 +12,10 @@ mod generation;
 mod handlers;
 mod query;
 
+use mimalloc::MiMalloc;
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
+
 type Image = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
 #[derive(Debug)]
@@ -69,6 +73,11 @@ fn load_patterns(dir: impl AsRef<std::path::Path>) -> Result<Vec<(String, Image)
             .0
             .to_string();
 
+        // this excludes the .gitkeep file
+        if id.is_empty() {
+            continue;
+        }
+
         let img = ImageReader::open(file.path())?.decode()?.to_rgba8();
 
         patterns.push((id, img));
@@ -82,7 +91,7 @@ fn load_patterns(dir: impl AsRef<std::path::Path>) -> Result<Vec<(String, Image)
 
 fn banner_from_pattern_list(
     rng: &mut ChaCha8Rng,
-    base: Image,
+    base: &mut Image,
     base_color: Option<Color>,
     patterns: Vec<(usize, Color)>,
     pattern_ref: &Vec<(String, Image)>,

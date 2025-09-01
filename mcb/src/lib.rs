@@ -37,11 +37,11 @@ impl Banner {
     const BASE: &'static [u8] = include_bytes!("./base.png");
 
     /// Creates a new [`Banner`] from a base texture and a given [`Color`].  
-    pub fn new(base: Image, color: Color) -> Result<Self, Error> {
+    pub fn new(base: &mut Image, color: Color) -> Result<Self, Error> {
         let mut banner = Image::new(Banner::X, Banner::Y);
 
-        let tinted_base = tint_image(base, &color)?;
-        image::imageops::overlay(&mut banner, &tinted_base, 0, 0);
+        tint_image(base, &color)?;
+        image::imageops::overlay(&mut banner, base, 0, 0);
 
         Ok(Banner { image: banner })
     }
@@ -65,8 +65,9 @@ impl Banner {
             return Err(Error::InvalidBannerDimension);
         }
 
-        let tinted_pattern = tint_image(pattern.img_owned(), color)?;
-        image::imageops::overlay(&mut self.image, &tinted_pattern, 0, 0);
+        let mut pattern = pattern.img_owned();
+        tint_image(&mut pattern, color)?;
+        image::imageops::overlay(&mut self.image, &pattern, 0, 0);
 
         Ok(())
     }
@@ -123,8 +124,7 @@ impl Deref for Banner {
 /// Tints an [`Image`] with the provided [`Color`].  
 ///
 /// `(current.r as f32 * color.r as f32 / 255.0f32) as u8`
-fn tint_image(data: Image, color: &Color) -> Result<Image, Error> {
-    let mut data = data;
+fn tint_image(data: &mut Image, color: &Color) -> Result<(), Error> {
     let (red, green, blue) = color::hex_to_rgb(&color.to_string())?;
 
     for pixel in data.pixels_mut() {
@@ -133,5 +133,5 @@ fn tint_image(data: Image, color: &Color) -> Result<Image, Error> {
         pixel[2] = (pixel[2] as f32 * blue as f32 / 255.0) as u8;
     }
 
-    Ok(data)
+    Ok(())
 }

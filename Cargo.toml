@@ -15,6 +15,11 @@ serde_json = { version = "1.0" }
 serde_repr = "0.1"
 tokio = { version = "1.47.1", features = ["full"] }
 mcb = { path = "mcb" }
+mimalloc = "0.1.48"
 
 [workspace]
 members = ["mcb"]
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
