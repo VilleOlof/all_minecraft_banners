@@ -1,12 +1,13 @@
 use anyhow::{Result, anyhow};
+use axum::extract::Path;
+use mcb::*;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
-use strum::VariantArray;
 
-use crate::mcb::{Banner, Color, Image};
+use crate::{Image, random_color};
 
 pub fn get_possible_combinations(pattern_len: usize) -> u64 {
-    const C: u64 = Color::VARIANTS.len() as u64;
+    const C: u64 = Color::all().len() as u64;
     let p = pattern_len as u64;
     let r = (p * C) as u64;
     C * (r.pow(6) + r.pow(5) + r.pow(4) + r.pow(3) + r.pow(2) + r + 1)
@@ -26,7 +27,7 @@ pub fn generate_pattern_list(
     let mut patterns = Vec::with_capacity(6);
     for _ in 0..get_amount_of_layers(rng, pattern_ref.len()) {
         let pattern = rng.random_range(0..pattern_ref.len() - 1);
-        let color = Color::random(rng);
+        let color = random_color(rng);
         patterns.push((pattern, *color));
     }
 
@@ -60,7 +61,7 @@ pub fn generate_pattern_list(
 }
 
 fn get_amount_of_layers(rng: &mut ChaCha8Rng, pattern_len: usize) -> usize {
-    const COLORS: usize = Color::VARIANTS.len();
+    const COLORS: usize = Color::all().len();
 
     let mut total: u64 = 0;
     let mut counts = Vec::with_capacity(Banner::VANILLA_MAX_PATTERN_SIZE);
@@ -85,4 +86,23 @@ fn get_amount_of_layers(rng: &mut ChaCha8Rng, pattern_len: usize) -> usize {
     }
 
     num_layers
+}
+
+pub fn get_rng_from_seed(seed: Option<Path<String>>, pattern_len: usize) -> Result<ChaCha8Rng> {
+    let seed = seed
+        .map(|s| match s.parse::<u64>() {
+            Ok(s) => Some(s),
+            Err(_) => None,
+        })
+        .flatten()
+        .unwrap_or_else(|| generate_seed(pattern_len));
+
+    let possible_combs = get_possible_combinations(pattern_len);
+    if seed > possible_combs {
+        return Err(anyhow!(
+            "Seed is too big, must be less than {possible_combs}"
+        ));
+    }
+
+    Ok(ChaCha8Rng::seed_from_u64(seed))
 }

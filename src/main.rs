@@ -1,27 +1,18 @@
-use anyhow::{Result, anyhow};
-use axum::{
-    Json, Router,
-    extract::{Path, State},
-    http::{StatusCode, header},
-    response::IntoResponse,
-    routing::get,
-};
-use axum_extra::extract::Query;
-use image::{ImageFormat, ImageReader};
-use rand::SeedableRng;
+use anyhow::Result;
+use axum::{Router, routing::get};
+use image::{ImageBuffer, ImageReader, Rgba};
+use mcb::*;
+use rand::seq::IndexedRandom;
 use rand_chacha::ChaCha8Rng;
-use serde::Deserialize;
-use serde_json::json;
-use std::{
-    fs::read_dir,
-    io::{BufWriter, Cursor},
-    sync::Arc,
-};
-use strum::VariantArray;
+use std::{fs::read_dir, sync::Arc};
 
-use crate::{generation::*, mcb::*};
+use crate::handlers::*;
+
 mod generation;
-mod mcb;
+mod handlers;
+mod query;
+
+type Image = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
 #[derive(Debug)]
 pub struct AppState {
@@ -31,15 +22,16 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut patterns = load_patterns("patterns")?;
-    // make sure theyre consistently in the same order
-    patterns.sort_by(|a, b| a.0.cmp(&b.0));
-    let base = Banner::load_base()?;
-
-    let state = AppState { patterns, base };
+    let state = AppState {
+        patterns: load_patterns("patterns")?,
+        base: Banner::load_base()?,
+    };
 
     let app = Router::new()
-        .route("/", get(root))
+        .route(
+            "/",
+            get(async || "Every place you've ever imagined, it's real"),
+        )
         .route("/create", get(create_banner))
         .route("/banner", get(get_banner))
         .route("/banner/{seed}", get(get_banner))
@@ -55,276 +47,12 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn root() -> &'static str {
-    "Every place you've ever imagined, it's real"
-}
-
-#[derive(Debug, Deserialize)]
-struct LayerEntry {
-    id: Option<usize>,
-    color: Option<u8>,
-}
-
-#[derive(Debug, Deserialize)]
-struct GetBannerQuery {
-    base_color: Option<u8>,
-    #[serde(default)]
-    layers: Vec<Option<String>>,
-    max_layers: Option<usize>,
-}
-
-fn get_rng_from_seed(seed: Option<Path<String>>, pattern_len: usize) -> Result<ChaCha8Rng> {
-    let seed = seed
-        .map(|s| match s.parse::<u64>() {
-            Ok(s) => Some(s),
-            Err(_) => None,
-        })
-        .flatten()
-        .unwrap_or_else(|| generate_seed(pattern_len));
-
-    let possible_combs = get_possible_combinations(pattern_len);
-    if seed > possible_combs {
-        return Err(anyhow!(
-            "Seed is too big, must be less than {possible_combs}"
-        ));
-    }
-
-    Ok(ChaCha8Rng::seed_from_u64(seed))
-}
-
-// [,]
-// []
-// [,5]
-// ["", 5]
-// ["",]
-fn parse_layer_entry(s: &str) -> LayerEntry {
-    let input = s.trim();
-    // remove []
-    let input = input.trim_end_matches(']');
-    let input = input.trim_start_matches('[');
-    // split at ,
-    let (id, color) = match input.split_once(',') {
-        Some(d) => d,
-        None => {
-            return LayerEntry {
-                id: None,
-                color: None,
-            };
-        }
-    };
-    let (id, color) = (id.trim(), color.trim());
-
-    let id = if id.is_empty() {
-        None
-    } else {
-        match id.parse::<usize>() {
-            Ok(c) => Some(c),
-            Err(_) => None,
-        }
-    };
-
-    let color = if color.is_empty() {
-        None
-    } else {
-        match color.parse::<u8>() {
-            Ok(c) => Some(c),
-            Err(_) => None,
-        }
-    };
-
-    LayerEntry { id, color }
-}
-
-fn map_layers(layers: Vec<Option<String>>) -> Vec<Option<(Option<usize>, Option<Color>)>> {
-    layers
-        .into_iter()
-        .map(|l| {
-            let unit = match l {
-                Some(l) => {
-                    let entry = parse_layer_entry(&l);
-
-                    let color = match entry.color {
-                        Some(c) => match Color::from_repr(c) {
-                            Some(c) => Some(c),
-                            None => None,
-                        },
-                        None => None,
-                    };
-
-                    Some((entry.id, color))
-                }
-                None => None,
-            };
-
-            unit
-        })
-        .collect::<Vec<Option<(Option<usize>, Option<Color>)>>>()
-}
-
 fn map_base_color(base_color: Option<u8>) -> Option<Color> {
     base_color.map(|c| Color::from_repr(c)).flatten()
 }
 
-async fn get_banner(
-    seed: Option<Path<String>>,
-    Query(query): Query<GetBannerQuery>,
-    State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
-    let mut rng = match get_rng_from_seed(seed, state.patterns.len()) {
-        Ok(rng) => rng,
-        Err(e) => return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("{e:#?}"))),
-    };
-
-    let base_color = map_base_color(query.base_color);
-    let layers = map_layers(query.layers);
-
-    let pattern_list =
-        match generate_pattern_list(&mut rng, &state.patterns, layers, query.max_layers) {
-            Ok(i) => i,
-            Err(e) => {
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("{e:#?}")));
-            }
-        };
-    let img = Banner::from_pattern_list(
-        &mut rng,
-        state.base.clone(),
-        base_color,
-        pattern_list,
-        &state.patterns,
-    )
-    .unwrap();
-
-    let mut buf = BufWriter::new(Cursor::new(vec![]));
-    img.write_to(&mut buf, ImageFormat::WebP).unwrap();
-
-    let bytes = buf.into_inner().unwrap().into_inner();
-    let headers = [(header::CONTENT_TYPE, "image/webp")];
-
-    Ok((headers, bytes))
-}
-
-async fn get_pattern_list(
-    seed: Option<Path<String>>,
-    Query(query): Query<GetBannerQuery>,
-    State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
-    let mut rng = match get_rng_from_seed(seed, state.patterns.len()) {
-        Ok(rng) => rng,
-        Err(e) => return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("{e:#?}"))),
-    };
-
-    let base_color = map_base_color(query.base_color);
-
-    let layers = map_layers(query.layers);
-
-    let pattern_list =
-        match generate_pattern_list(&mut rng, &state.patterns, layers, query.max_layers) {
-            Ok(i) => i,
-            Err(e) => {
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("{e:#?}")));
-            }
-        };
-    let pattern_list = pattern_list
-        .into_iter()
-        .map(|(pattern_id, color)| {
-            let pattern = state.patterns[pattern_id].0.to_owned();
-            (pattern, color.to_string())
-        })
-        .collect::<Vec<(String, String)>>();
-
-    // important we do base_color AFTER patterns, the same as in get_banner
-    // so the seed is the same since its seq
-    let base_color = match base_color {
-        Some(color) => color,
-        None => *Color::random(&mut rng),
-    };
-
-    Ok(Json(json!({
-        "base": base_color.to_string(),
-        "patterns": pattern_list
-    })))
-}
-
-async fn get_new_seed(State(state): State<Arc<AppState>>) -> String {
-    generate_seed(state.patterns.len()).to_string()
-}
-
-async fn get_metadata(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    let patterns = state
-        .patterns
-        .iter()
-        .map(|p| p.0.to_owned())
-        .collect::<Vec<String>>();
-    let colors = Color::VARIANTS
-        .iter()
-        .map(|c| c.to_string())
-        .collect::<Vec<String>>();
-
-    Json(json!({
-        "patterns": patterns,
-        "colors": colors,
-        "combinations": get_possible_combinations(state.patterns.len()).to_string()
-    }))
-}
-
-async fn create_banner(
-    Query(query): Query<GetBannerQuery>,
-    State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
-    let base_color = match query.base_color {
-        Some(color) => match Color::from_repr(color) {
-            Some(c) => c,
-            None => return Err((StatusCode::BAD_REQUEST, "Invalid 'base_color'".to_string())),
-        },
-        None => return Err((StatusCode::BAD_REQUEST, "Missing 'base_color'".to_string())),
-    };
-    let layers = map_layers(query.layers);
-
-    let mut banner = match Banner::new(state.base.clone(), base_color) {
-        Ok(b) => b,
-        Err(_) => {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to create banner".to_string(),
-            ));
-        }
-    };
-
-    for layer in layers {
-        let layer = match layer {
-            Some(l) => l,
-            None => continue,
-        };
-
-        let (pattern_id, color) = match layer {
-            (Some(i), Some(c)) => (i, c),
-            _ => {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    "Invalid layer arguments".to_string(),
-                ));
-            }
-        };
-        let pattern = state.patterns[pattern_id].1.clone();
-        let pattern = Pattern::new(pattern);
-        match banner.add_pattern(pattern, &color) {
-            Ok(_) => (),
-            Err(_) => {
-                return Err((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to add layer".to_string(),
-                ));
-            }
-        };
-    }
-
-    let mut buf = BufWriter::new(Cursor::new(vec![]));
-    banner.write_to(&mut buf, ImageFormat::WebP).unwrap();
-
-    let bytes = buf.into_inner().unwrap().into_inner();
-    let headers = [(header::CONTENT_TYPE, "image/webp")];
-
-    Ok((headers, bytes))
+fn random_color(rng: &mut ChaCha8Rng) -> &Color {
+    Color::all().choose(rng).unwrap()
 }
 
 fn load_patterns(dir: impl AsRef<std::path::Path>) -> Result<Vec<(String, Image)>> {
@@ -346,5 +74,29 @@ fn load_patterns(dir: impl AsRef<std::path::Path>) -> Result<Vec<(String, Image)
         patterns.push((id, img));
     }
 
+    // make sure theyre consistently in the same order
+    patterns.sort_by(|a, b| a.0.cmp(&b.0));
+
     Ok(patterns)
+}
+
+fn banner_from_pattern_list(
+    rng: &mut ChaCha8Rng,
+    base: Image,
+    base_color: Option<Color>,
+    patterns: Vec<(usize, Color)>,
+    pattern_ref: &Vec<(String, Image)>,
+) -> Result<Image> {
+    let base_color = match base_color {
+        Some(color) => color,
+        None => *random_color(rng),
+    };
+    let mut banner = Banner::new(base, base_color)?;
+
+    for (pattern_id, color) in patterns {
+        let pattern = Pattern::new(pattern_ref[pattern_id].1.clone());
+        banner.add_pattern(pattern, &color)?;
+    }
+
+    Ok(banner.img_owned())
 }
