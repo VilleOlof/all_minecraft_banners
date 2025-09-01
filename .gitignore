@@ -2,3 +2,4 @@
 /patterns/*
 !/patterns/.gitkeep
 banner.png
+count.txt

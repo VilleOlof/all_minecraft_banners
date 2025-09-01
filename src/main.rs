@@ -4,7 +4,11 @@ use image::{ImageBuffer, ImageReader, Rgba};
 use mcb::*;
 use rand::seq::IndexedRandom;
 use rand_chacha::ChaCha8Rng;
-use std::{fs::read_dir, sync::Arc};
+use std::{
+    fs::{read_dir, read_to_string, write},
+    sync::Arc,
+};
+use tokio::sync::Mutex;
 
 use crate::handlers::*;
 
@@ -22,6 +26,7 @@ type Image = ImageBuffer<Rgba<u8>, Vec<u8>>;
 pub struct AppState {
     patterns: Vec<(String, Image)>,
     base: Image,
+    banner_count: Mutex<u64>,
 }
 
 #[tokio::main]
@@ -29,6 +34,7 @@ async fn main() -> Result<()> {
     let state = AppState {
         patterns: load_patterns("patterns")?,
         base: Banner::load_base()?,
+        banner_count: Mutex::new(load_banner_count()?),
     };
 
     let app = Router::new()
@@ -87,6 +93,29 @@ fn load_patterns(dir: impl AsRef<std::path::Path>) -> Result<Vec<(String, Image)
     patterns.sort_by(|a, b| a.0.cmp(&b.0));
 
     Ok(patterns)
+}
+
+const BANNER_STAT_FILE: &'static str = "count.txt";
+fn load_banner_count() -> Result<u64> {
+    let data = read_to_string(BANNER_STAT_FILE).unwrap_or("0".to_string());
+    Ok(data.parse::<u64>()?)
+}
+fn save_banner_count(num: u64) -> Result<()> {
+    write(BANNER_STAT_FILE, num.to_string())?;
+    Ok(())
+}
+async fn increment_banner_count(num: &Mutex<u64>) {
+    let mut num = num.lock().await;
+    *num += 1;
+    if *num % 100 == 0 {
+        // ignore error
+        match save_banner_count(*num) {
+            Err(e) => {
+                println!("{e:?}");
+            }
+            _ => (),
+        }
+    }
 }
 
 fn banner_from_pattern_list(

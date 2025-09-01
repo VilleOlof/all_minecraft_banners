@@ -18,7 +18,7 @@ use crate::{
     generation::{
         generate_pattern_list, generate_seed, get_possible_combinations, get_rng_from_seed,
     },
-    map_base_color,
+    increment_banner_count, map_base_color,
     query::{GetBannerQuery, map_layers},
     random_color,
 };
@@ -52,6 +52,8 @@ pub async fn get_banner(
         &state.patterns,
     )
     .unwrap();
+
+    increment_banner_count(&state.banner_count).await;
 
     let mut buf = BufWriter::new(Cursor::new(vec![]));
     img.write_to(&mut buf, ImageFormat::WebP).unwrap();
@@ -179,6 +181,8 @@ pub async fn create_banner(
             }
         };
     }
+
+    increment_banner_count(&state.banner_count).await;
 
     let mut buf = BufWriter::new(Cursor::new(vec![]));
     banner.write_to(&mut buf, ImageFormat::WebP).unwrap();
