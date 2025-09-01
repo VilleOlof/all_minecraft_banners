@@ -44,11 +44,12 @@
 </script>
 
 <div class="flex w-full h-full flex-col items-center justify-center gap-4">
-    <div class="flex gap-4">
+    <div class="flex flex-col lg:flex-row gap-4 h-full lg:h-auto">
+        <!-- i dont know why we need the 18 extra margin on top but otherwise half the banner is out of the viewport -->
         <img
             src={get_partial_banner_url(6)}
             alt=""
-            class="w-auto h-[43.3rem] object-contain pixelated"
+            class="w-auto h-[20rem] lg:h-[43.3rem] object-contain pixelated"
         />
 
         <div class="flex flex-col justify-start gap-1">
@@ -102,10 +103,15 @@
                 {/each}
             </div>
         </div>
-    </div>
 
-    <div class="flex w-[46rem]">
-        <p class="text-balance text-neutral-400">
+        <div class="flex pb-4 lg:hidden">
+            <p class="text-balance text-center text-neutral-400">
+                Any changes you do here won't save.
+            </p>
+        </div>
+    </div>
+    <div class="flex pb-4 lg:block">
+        <p class="text-balance text-center text-neutral-400">
             Any changes you do here won't save.
         </p>
     </div>

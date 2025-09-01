@@ -38,14 +38,14 @@
 	class="w-dvw h-dvh flex flex-col bg-neutral-900 text-neutral-200 font-monocraft"
 >
 	<header
-		class="flex justify-between z-10 bg-neutral-950 py-2 px-4 w-full items-end gap-5 drop-shadow-[0px_6px_5px_rgba(0,0,0,0.75)]"
+		class="flex flex-col xl:flex-row justify-between z-10 bg-neutral-950 py-2 px-4 w-full xl:items-end gap-2 drop-shadow-[0px_6px_5px_rgba(0,0,0,0.75)]"
 	>
-		<div class="flex gap-5">
-			<a href="/b/{data.header_seed}">
+		<div class="flex gap-5 justify-center xl:justify-start">
+			<a href="/b/{data.header_seed}" class="hidden sm:block">
 				<img
 					src="{PUBLIC_API}/banner/{data.header_seed}"
 					alt=""
-					class="w-[1.1rem] object-contain bg-neutral-900"
+					class="w-[0.8rem] md:w-[1.1rem] object-contain bg-neutral-900"
 				/></a
 			>
 
@@ -58,7 +58,7 @@
 					await goto(`/?page=${seed}`);
 					nav();
 				}}
-				class="text-3xl flex gap-3 items-end hover:text-neutral-400 transition-colors cursor-pointer"
+				class="text-xl md:text-3xl flex flex-wrap gap-1 md:gap-3 justify-center xl:justify-start items-end hover:text-neutral-400 transition-colors cursor-pointer"
 			>
 				<span>All</span>
 				<span>Minecraft</span>
@@ -69,8 +69,8 @@
 
 		<!-- <div class="w-1 h-full bg-neutral-900 rounded-sm"></div> -->
 
-		<p class="text-2xl">
-			<span class="text-lime-400"
+		<p class="md:text-2xl text-balance text-center">
+			<span class="text-lime-400 break-all"
 				>{format_num_string(data.metadata.combinations)}</span
 			> unique banners!
 		</p>

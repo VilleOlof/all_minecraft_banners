@@ -46,11 +46,11 @@
     {/each}
 </div>
 
-<div class="flex flex-col gap-4 justify-center items-center text-2xl mt-4">
-    <div class="flex gap-2 mt-4">
+<div class="flex flex-col gap-4 justify-center items-center lg:text-2xl mt-4">
+    <div class="flex gap-0.5 md:gap-2 mt-4 items-center">
         <button
             disabled={navigation_disabled}
-            class="cursor-pointer disabled:opacity-50 bg-neutral-950 px-3.5 py-1 rounded-sm hover:bg-neutral-800 transition-colors active:bg-neutral-900"
+            class="cursor-pointer disabled:opacity-50 bg-neutral-950 px-2.5 h-8 lg:h-11 lg:px-3.5 lg:py-1 rounded-sm hover:bg-neutral-800 transition-colors active:bg-neutral-900"
             onclick={() => {
                 params.page -= BigInt(1);
                 if (params.page < 0) {
@@ -61,7 +61,7 @@
         >
             {"<"}
         </button>
-        <p class="text-3xl items-center flex gap-2">
+        <p class="lg:text-3xl items-center flex gap-0.5 lg:gap-2">
             <input
                 onchange={(e) => {
                     if (!e.target) return;
@@ -78,7 +78,7 @@
                     params.page = new_page;
                 }}
                 type="text"
-                class="w-min bg-neutral-950 px-2 outline-0 hover:bg-neutral-800 focus:bg-neutral-800 rounded-sm transition-colors py-1"
+                class="w-28 sm:w-min bg-neutral-950 px-2 outline-0 hover:bg-neutral-800 focus:bg-neutral-800 rounded-sm transition-colors py-1"
                 value={format_num_string(params.page.toString())}
             />
             <button
@@ -92,16 +92,16 @@
                 <img
                     src={dice}
                     alt=""
-                    class="w-11 h-11 rounded-sm z-10 hover:bg-neutral-800 cursor-pointer transition-colors bg-neutral-950 p-2"
+                    class="w-8 h-8 lg:w-11 lg:h-11 rounded-sm z-10 hover:bg-neutral-800 cursor-pointer transition-colors bg-neutral-950 p-2"
                 />
             </button>
-            <span class="bg-neutral-950 px-2 py-1 rounded-sm"
+            <span class="bg-neutral-950 px-2 py-1 rounded-sm hidden lg:block"
                 >{format_num_string(MAX_PAGE.toString())}</span
             >
         </p>
         <button
             disabled={navigation_disabled}
-            class="cursor-pointer disabled:opacity-50 bg-neutral-950 px-3.5 py-1 rounded-sm hover:bg-neutral-800 transition-colors active:bg-neutral-900"
+            class="cursor-pointer disabled:opacity-50 bg-neutral-950 px-2.5 h-8 lg:h-11 lg:px-3.5 lg:py-1 rounded-sm hover:bg-neutral-800 transition-colors active:bg-neutral-900"
             onclick={() => {
                 if (params.page + BigInt(1) > MAX_PAGE) {
                     params.page = MAX_PAGE;

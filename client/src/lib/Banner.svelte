@@ -8,6 +8,6 @@
     <img
         src="{PUBLIC_API}/banner/{seed}"
         alt=""
-        class="pixelated w-40 drop-shadow-[4px_4px_5px_rgba(0,0,0,0.5)] transition-all hover:scale-95"
+        class="pixelated w-20 lg:w-40 drop-shadow-[4px_4px_5px_rgba(0,0,0,0.5)] transition-all hover:scale-95"
     />
 </a>
