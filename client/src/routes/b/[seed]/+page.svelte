@@ -61,7 +61,7 @@
     <div class="flex flex-col lg:flex-row gap-4 h-full lg:h-auto">
         <!-- i dont know why we need the 18 extra margin on top but otherwise half the banner is out of the viewport -->
         <img
-            src={get_partial_banner_url(6)}
+            src={get_partial_banner_url(data.patterns.patterns.length)}
             alt=""
             class="w-auto h-[20rem] lg:h-[43.3rem] object-contain pixelated"
         />
