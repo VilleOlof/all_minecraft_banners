@@ -12,6 +12,7 @@ use tokio::sync::Mutex;
 
 use crate::handlers::*;
 
+mod bitbanner;
 mod generation;
 mod handlers;
 mod query;
